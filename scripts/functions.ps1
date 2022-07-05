@@ -8,7 +8,7 @@ function Create-GoogleMigrationBatch(
 
     [System.Collections.ArrayList]$emailAddresses = @()
     foreach ($a in $Alias) {
-        $emailAddresses.Add("${a}@${Domain}")
+        $emailAddresses.Add("${a}@${Domain}") | Out-Null
     }
 
     Write-Debug "Testing migration server availability with email address $($emailAddresses[0])..."
@@ -18,7 +18,7 @@ function Create-GoogleMigrationBatch(
     Write-Debug "Creating CSV file with batch contents..."
     $csvFile = New-TemporaryFile
     Set-Content -Value "EmailAddress" -Path $csvFile
-    foreach ($emailAddress in emailAddresses) {
+    foreach ($emailAddress in $emailAddresses) {
         Add-Content -Value $emailAddress -Path $csvFile
     }
     Get-Content $csvFile | Out-String | Write-Verbose
@@ -32,8 +32,12 @@ function Create-GoogleMigrationBatch(
     }
     $batch | Sort-Properties | Format-List
 
-    Write-Verbose "Starting batch ${batchName}..."
-    Start-MigrationBatch -Identity $batchName | Sort-Properties | Format-List
+    if ($batch.State -eq "Completed") {
+        Write-Warning "Batch ${batchName} is already completed"
+    } else {
+        Write-Verbose "Starting batch ${batchName}..."
+        Start-MigrationBatch -Identity $batchName
+    }
 }
 
 function Create-MailUser(
