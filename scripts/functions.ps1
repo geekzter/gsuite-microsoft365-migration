@@ -45,6 +45,7 @@ function Create-MailUser(
     [parameter(Mandatory=$true)][string]$FirstName,
     [parameter(Mandatory=$true)][string]$LastName,
     [parameter(Mandatory=$true)][string]$PrimaryDomain,
+    [parameter(Mandatory=$true)][string]$ExternalDomain,
     [parameter(Mandatory=$true)][string[]]$SecondaryDomain
 ) {
     Get-SecurityPrincipal -Filter "Alias -eq '${Alias}'" | Set-Variable existingUser
@@ -61,7 +62,6 @@ function Create-MailUser(
         New-MailUser -Alias $Alias `
                      -Name $fullName `
                      -DisplayName "${fullName} (created with New-MailUser)" `
-                     -ExternalEmailAddress $emailAddress `
                      -FirstName $FirstName `
                      -LastName $LastName `
                      -MicrosoftOnlineServicesID $emailAddress `
@@ -72,20 +72,24 @@ function Create-MailUser(
 
     Get-MailUser -Identity $Alias | Set-Variable mailUser
 
-    $emailAddresses = $mailUser.emailAddresses
+    $externalEmailAddress = $ExternalDomain ? "${Alias}@${ExternalDomain}" : $null
+    [System.Collections.ArrayList]$emailAddresses = @($emailAddress)
+    # $emailAddresses = $mailUser.emailAddresses
     Write-Debug "`$emailAddresses: $emailAddresses"
     foreach ($domain in $SecondaryDomain) {
         $secondaryEmailAddress = "${Alias}@${domain}"
-        if (($secondaryEmailAddress -inotin $emailAddresses) -and ("smtp:${secondaryEmailAddress}" -inotin $emailAddresses)) {
+        # if (($secondaryEmailAddress -inotin $emailAddresses) -and ("smtp:${secondaryEmailAddress}" -inotin $emailAddresses)) {
             $emailAddresses.Add($secondaryEmailAddress) | Out-Null
             $updateMailUser = $true
-        }
+        # }
     }
 
     if ($updateMailUser) {
         Write-Debug "`$emailAddresses: $emailAddresses"
         Write-Verbose "Updating Mail user ${emailAddress}..."
-        Set-MailUser -Identity $Alias -EmailAddresses $emailAddresses
+        Set-MailUser -Identity $Alias `
+                     -EmailAddresses $emailAddresses `
+                     -ExternalEmailAddress $externalEmailAddress 
     }
 
     if ($DebugPreference -ieq "Continue") {
@@ -115,5 +119,7 @@ function Login-ExchangeOnline () {
 function Sort-Properties (
     [parameter(Mandatory=$true,ValueFromPipeline=$true)][object]$Object
 ) {
-    $Object | Select-Object ([string[]]($Object | Get-Member -MemberType Property | %{ $_.Name } | Sort-Object))
+    if ($Object) {
+        $Object | Select-Object ([string[]]($Object | Get-Member -MemberType Property | %{ $_.Name } | Sort-Object))
+    }
 }

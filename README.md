@@ -8,3 +8,4 @@
     - Contacts API
     - Gmail API
     - People API
+- [Grant access to the service account for your Google tenant](https://docs.microsoft.com/en-gb/exchange/mailbox-migration/manually-configuring-gsuite-for-migration#grant-access-to-the-service-account-for-your-google-tenant)
