@@ -28,7 +28,9 @@ function Create-GoogleMigrationBatch(
     Get-MigrationBatch -Identity $batchName -ErrorAction SilentlyContinue | Set-Variable batch
     if (!$batch) {
         Write-Debug "Creating batch ${batchName}..."
-        New-MigrationBatch -SourceEndpoint $EndpointName -Name $batchName -CSVData $([System.IO.File]::ReadAllBytes($csvFile)) -TargetDeliveryDomain $DeliveryDomain | Set-Variable batch
+        New-MigrationBatch -Name $batchName -CSVData $([System.IO.File]::ReadAllBytes($csvFile)) `
+                           -SourceEndpoint $EndpointName `
+                           -TargetDeliveryDomain $DeliveryDomain | Set-Variable batch
     }
     $batch | Sort-Properties | Format-List
 
@@ -89,7 +91,8 @@ function Create-MailUser(
         Write-Verbose "Updating Mail user ${emailAddress}..."
         Set-MailUser -Identity $Alias `
                      -EmailAddresses $emailAddresses `
-                     -ExternalEmailAddress $externalEmailAddress 
+                     -ExternalEmailAddress $externalEmailAddress `
+                     -MicrosoftOnlineServicesID $emailAddress
     }
 
     if ($DebugPreference -ieq "Continue") {
