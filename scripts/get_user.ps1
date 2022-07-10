@@ -8,6 +8,6 @@ Login-ExchangeOnline
 
 Get-MailUser -Identity $Name -ErrorAction SilentlyContinue | Set-Variable user
 if (!$user) {
-    Get-MailBox -Identity $Name -ErrorAction SilentlyContinue | Set-Variable user
+    Get-EXOMailBox -Identity $Name -ErrorAction SilentlyContinue | Set-Variable user
 }
 $user | Sort-Properties | Format-List

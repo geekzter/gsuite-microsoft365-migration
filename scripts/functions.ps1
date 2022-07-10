@@ -75,15 +75,15 @@ function Create-MailUser(
     Get-MailUser -Identity $Alias | Set-Variable mailUser
 
     $externalEmailAddress = $ExternalDomain ? "${Alias}@${ExternalDomain}" : $null
-    [System.Collections.ArrayList]$emailAddresses = @($emailAddress)
+    [System.Collections.ArrayList]$emailAddresses = @("smtp:${emailAddress}")
     # $emailAddresses = $mailUser.emailAddresses
     Write-Debug "`$emailAddresses: $emailAddresses"
     foreach ($domain in $SecondaryDomain) {
-        $secondaryEmailAddress = "${Alias}@${domain}"
-        # if (($secondaryEmailAddress -inotin $emailAddresses) -and ("smtp:${secondaryEmailAddress}" -inotin $emailAddresses)) {
+        $secondaryEmailAddress = "smtp:${Alias}@${domain}"
+        if (($secondaryEmailAddress -inotin $emailAddresses) -and ("smtp:${secondaryEmailAddress}" -inotin $emailAddresses)) {
             $emailAddresses.Add($secondaryEmailAddress) | Out-Null
             $updateMailUser = $true
-        # }
+        }
     }
 
     if ($updateMailUser) {
