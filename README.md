@@ -15,6 +15,7 @@
 # GmailForwardingAddressRequiresVerificationException
 If you run into this issue, try any of these solutions:
 - Do not use a `<tenantname`>.onmicrosoft.com domain (if you did not [read the pre-requisites](https://docs.microsoft.com/en-GB/exchange/mailbox-migration/googleworkspace-migration-prerequisites#create-a-subdomain-for-mail-routing-to-microsoft-365-or-office-365))
+- Assign licenses before completing the migration batch
 - In Google Workspace, [set up routing for your domain or organization](https://support.google.com/a/answer/6297084)
 - The previous option is not available in GSuite free edition. In this case you have to ask each migrated user to click the validation link sent to their inbox.
 
