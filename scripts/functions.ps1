@@ -58,12 +58,13 @@ function Create-MailUser(
 
     $emailAddress = "${Alias}@${PrimaryDomain}"
     $fullName = $FirstName + " " + $LastName;
+    $displayName = "${fullName} (O365)"
     if (!$existingUser) {
         Write-Host "Creating Mail user ${emailAddress}..."
         [guid]::NewGuid().ToString() | ConvertTo-SecureString -AsPlainText -Force | Set-Variable password
         New-MailUser -Alias $Alias `
                      -Name $fullName `
-                     -DisplayName "${fullName} (created with New-MailUser)" `
+                     
                      -FirstName $FirstName `
                      -LastName $LastName `
                      -MicrosoftOnlineServicesID $emailAddress `
@@ -90,6 +91,7 @@ function Create-MailUser(
         Write-Debug "`$emailAddresses: $emailAddresses"
         Write-Verbose "Updating Mail user ${emailAddress}..."
         Set-MailUser -Identity $Alias `
+                     -DisplayName "${displayName}" `
                      -EmailAddresses $emailAddresses `
                      -ExternalEmailAddress $externalEmailAddress `
                      -MicrosoftOnlineServicesID $emailAddress
