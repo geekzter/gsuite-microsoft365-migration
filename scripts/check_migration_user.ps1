@@ -31,14 +31,14 @@ if ($emailAddress) {
     New-TemporaryFile | Select-Object -ExpandProperty FullName | Set-Variable migrationUserStatsFile
     $migrationUserStatsFile -replace ".tmp",".xml" | Set-Variable migrationUserStatsFile
     $migrationUserStats | Sort-Properties | Write-Verbose
-    $migrationUserStats.Report.BadItems | Set-Variable skippedItems
     $migrationUserStats | Export-Clixml $migrationUserStatsFile
     Write-Host "`nFull migration statistics for user ${emailAddress}: $migrationUserStatsFile"
 
+    $migrationUserStats.SkippedItems | Set-Variable skippedItems
     if ($skippedItems) {
         $skippedItems | Measure-Object | Select-Object -ExpandProperty Count | Set-Variable skippedItemsCount
         Write-Warning "`nFound $skippedItemsCount skipped items for ${emailAddress}:"
-        $skippedItems | Format-Table foldername,subject,failure
+        $skippedItems | Format-Table Subject, Sender, DateSent, ScoringClassifications
 
         pause
     }
