@@ -36,7 +36,7 @@ function Create-GoogleMigrationBatch(
         Write-Host "Approving skipped items in batch ${batchName}..."
         Set-MigrationBatch -Identity $batchName -ApproveSkippedItems
     } else {
-        Write-Debug "Batch ${batchName} already exists, skipping..."
+        Write-Verbose "Batch ${batchName} already exists"
     }
     $batch | Sort-Properties | Format-List
 
