@@ -1,20 +1,47 @@
 #!/usr/bin/env pwsh
 #Requires -Version 7
+[CmdletBinding(DefaultParameterSetName="EmailAddress")]
 param ( 
-    [parameter(Mandatory=$false)][string]$Alias,
-    [parameter(Mandatory=$false)][string]$PrimaryDomain,
-    [parameter(Mandatory=$false)][string]$DeliveryDomain="office365.${PrimaryDomain}"
+    [parameter(Mandatory=$false,ParameterSetName="EmailAddress",Position=0)]
+    [string]
+    $EmailAddress,
+
+    [parameter(Mandatory=$false,ParameterSetName="PrimaryDomain")]
+    [string]
+    $Alias,
+
+    [parameter(Mandatory=$false,ParameterSetName="PrimaryDomain")]
+    [string]
+    $PrimaryDomain,
+
+    [parameter(Mandatory=$false)]
+    [string]
+    $DeliveryDomain
 ) 
 . (Join-Path $PSScriptRoot functions.ps1)
 
-Login-ExchangeOnline
-
-if ($Alias -and $PrimaryDomain) {
-    $emailAddress = "${Alias}@${PrimaryDomain}"
+# Process input
+switch ($PSCmdlet.ParameterSetName) {
+    "EmailAddress" {
+        $EmailAddress = $EmailAddress.ToLower()
+        $Alias = $EmailAddress.Split("@")[0]
+        $PrimaryDomain = $EmailAddress.Split("@")[1]
+    }
+    "PrimaryDomain" {
+        if ($Alias -and $PrimaryDomain) {
+            $EmailAddress = "${Alias}@${PrimaryDomain}"
+        }
+    }
+}
+if (!$DeliveryDomain) {
+    $DeliveryDomain = "office365.${PrimaryDomain}"
 }
 if ($Alias -and $DeliveryDomain) {
     $deliveryEmailAddress = "${Alias}@${DeliveryDomain}"
 }
+
+# Start session
+Login-ExchangeOnline
 
 # Check migration endpoint(s)
 Get-MigrationEndpoint | Where-Object { !$_.IsValid } | Set-Variable invalidEdpoints
@@ -26,18 +53,18 @@ if ($invalidEdpoints) {
 }
 
 # Get migration statistics for user
-if ($emailAddress) {
-    Get-MigrationUserStatistics $emailAddress -IncludeSkippedItems -IncludeReport -DiagnosticInfo "showtimeslots, showtimeline, verbose" | Set-Variable migrationUserStats
+if ($EmailAddress) {
+    Get-MigrationUserStatistics $EmailAddress -IncludeSkippedItems -IncludeReport -DiagnosticInfo "showtimeslots, showtimeline, verbose" | Set-Variable migrationUserStats
     New-TemporaryFile | Select-Object -ExpandProperty FullName | Set-Variable migrationUserStatsFile
     $migrationUserStatsFile -replace ".tmp",".xml" | Set-Variable migrationUserStatsFile
     $migrationUserStats | Sort-Properties | Write-Verbose
     $migrationUserStats | Export-Clixml $migrationUserStatsFile
-    Write-Host "`nFull migration statistics for user ${emailAddress}: $migrationUserStatsFile"
+    Write-Host "`nFull migration statistics for user ${EmailAddress}: $migrationUserStatsFile"
 
     $migrationUserStats.SkippedItems | Set-Variable skippedItems
     if ($skippedItems) {
         $skippedItems | Measure-Object | Select-Object -ExpandProperty Count | Set-Variable skippedItemsCount
-        Write-Warning "`nFound $skippedItemsCount skipped items for ${emailAddress}:"
+        Write-Warning "`nFound $skippedItemsCount skipped items for ${EmailAddress}:"
         $skippedItems | Format-Table Subject, Sender, DateSent, ScoringClassifications
 
         pause
@@ -65,23 +92,21 @@ if ($deliveryEmailAddress) {
 }
 
 # Get migration user
-if ($emailAddress) {
-    Write-Verbose "Migration batch ${emailAddress}:"
-    Get-MigrationBatch -Identity $emailAddress | Where-Object { ($_.DataConsistencyScore -inotin "Good", "Perfect") -or !$_.IsValid } | Set-Variable migrationBatch
+if ($EmailAddress) {
+    Write-Verbose "Migration batch ${EmailAddress}:"
+    Get-MigrationBatch -Identity $EmailAddress | Where-Object { ($_.DataConsistencyScore -inotin "Good", "Perfect") -or !$_.IsValid } | Set-Variable migrationBatch
     if ($migrationBatch) {
-        Write-Warning "`nMigration batch ${emailAddress} has data consistency score '$($migrationBatch.DataConsistencyScore.ToString())'"
+        Write-Warning "`nMigration batch ${EmailAddress} has data consistency score '$($migrationBatch.DataConsistencyScore.ToString())'"
         $migrationBatch | Sort-Properties | Write-Verbose
         $migrationBatch | Format-List -Property BatchDirection,Identity,IsValid,Status,State,DataConsistencyScore,StartDateTime,TargetDeliveryDomain,WorkflowStage
 
         pause
     }
 
-    Write-Verbose "Migration user ${emailAddress}:"
-    Get-MigrationUser -Identity $emailAddress | Where-Object { $_.DataConsistencyScore -inotin "Good", "Perfect" } | Set-Variable migrationUser
+    Write-Verbose "Migration user ${EmailAddress}:"
+    Get-MigrationUser -Identity $EmailAddress | Where-Object { $_.DataConsistencyScore -inotin "Good", "Perfect" } | Set-Variable migrationUser
     if ($migrationUser) {
-        Write-Warning "`nMigration user ${emailAddress} has data consistency score '$($migrationUser.DataConsistencyScore.ToString())'"
+        Write-Warning "`nMigration user ${EmailAddress} has data consistency score '$($migrationUser.DataConsistencyScore.ToString())'"
         $migrationUser | Sort-Properties
-
-        pause
     }
 }

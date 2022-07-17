@@ -1,5 +1,6 @@
 function Create-GoogleMigrationBatch(
     [parameter(Mandatory=$true)][string[]]$Alias,
+    [parameter(Mandatory=$false)][switch]$ApproveSkippedItems,
     [parameter(Mandatory=$true)][string]$Domain,
     [parameter(Mandatory=$false)][string]$DeliveryDomain="office365${Domain}",
     [parameter(Mandatory=$false)][string]$EndpointName="Gsuite2Office365",
@@ -31,6 +32,11 @@ function Create-GoogleMigrationBatch(
         New-MigrationBatch -Name $batchName -CSVData $([System.IO.File]::ReadAllBytes($csvFile)) `
                            -SourceEndpoint $EndpointName `
                            -TargetDeliveryDomain $DeliveryDomain | Set-Variable batch
+    } elseif ($ApproveSkippedItems) {
+        Write-Host "Approving skipped items in batch ${batchName}..."
+        Set-MigrationBatch -Identity $batchName -ApproveSkippedItems
+    } else {
+        Write-Debug "Batch ${batchName} already exists, skipping..."
     }
     $batch | Sort-Properties | Format-List
 
