@@ -52,32 +52,13 @@ if ($invalidEdpoints) {
     pause
 }
 
-# Get migration statistics for user
-if ($EmailAddress) {
-    Get-MigrationUserStatistics $EmailAddress -IncludeSkippedItems -IncludeReport -DiagnosticInfo "showtimeslots, showtimeline, verbose" | Set-Variable migrationUserStats
-    New-TemporaryFile | Select-Object -ExpandProperty FullName | Set-Variable migrationUserStatsFile
-    $migrationUserStatsFile -replace ".tmp",".xml" | Set-Variable migrationUserStatsFile
-    $migrationUserStats | Sort-Properties | Write-Verbose
-    $migrationUserStats | Export-Clixml $migrationUserStatsFile
-    Write-Host "`nFull migration statistics for user ${EmailAddress}: $migrationUserStatsFile"
-
-    $migrationUserStats.SkippedItems | Set-Variable skippedItems
-    if ($skippedItems) {
-        $skippedItems | Measure-Object | Select-Object -ExpandProperty Count | Set-Variable skippedItemsCount
-        Write-Warning "`nFound $skippedItemsCount skipped items for ${EmailAddress}:"
-        $skippedItems | Format-Table Subject, Sender, DateSent, ScoringClassifications
-
-        pause
-    }
-}
-
 # Get sync statistics for user
 if ($deliveryEmailAddress) {
     Get-SyncRequest -Mailbox $deliveryEmailAddress | Get-SyncRequestStatistics -IncludeReport -DiagnosticInfo "showtimeslots, showtimeline, verbose" `
                                                    | Where-Object { ($_.DataConsistencyScore -inotin "Good", "Perfect") -or !$_.IsValid } `
                                                    | Set-Variable syncRequestStats
     if ($syncRequestStats) {
-        Write-Warning "`nSync request ${deliveryEmailAddress} has data consistency score '$($syncRequestStats.DataConsistencyScore.ToString())'"
+        Write-Warning "Sync request ${deliveryEmailAddress} has data consistency score '$($syncRequestStats.DataConsistencyScore.ToString())'"
 
         New-TemporaryFile | Select-Object -ExpandProperty FullName | Set-Variable syncRequestStatsFile
         $syncRequestStatsFile -replace ".tmp",".xml" | Set-Variable syncRequestStatsFile
@@ -91,12 +72,31 @@ if ($deliveryEmailAddress) {
     }
 }
 
+# Get migration statistics for user
+if ($EmailAddress) {
+    Get-MigrationUserStatistics $EmailAddress -IncludeSkippedItems -IncludeReport -DiagnosticInfo "showtimeslots, showtimeline, verbose" | Set-Variable migrationUserStats
+    New-TemporaryFile | Select-Object -ExpandProperty FullName | Set-Variable migrationUserStatsFile
+    $migrationUserStatsFile -replace ".tmp",".xml" | Set-Variable migrationUserStatsFile
+    $migrationUserStats | Sort-Properties | Write-Verbose
+    $migrationUserStats | Export-Clixml $migrationUserStatsFile
+    Write-Host "`nFull migration statistics for user ${EmailAddress}: $migrationUserStatsFile"
+
+    $migrationUserStats.SkippedItems | Set-Variable skippedItems
+    if ($skippedItems) {
+        $skippedItems | Measure-Object | Select-Object -ExpandProperty Count | Set-Variable skippedItemsCount
+        Write-Warning "Found $skippedItemsCount skipped items for ${EmailAddress}:"
+        $skippedItems | Format-Table Subject, Sender, DateSent, ScoringClassifications
+
+        pause
+    }
+}
+
 # Get migration user
 if ($EmailAddress) {
     Write-Verbose "Migration batch ${EmailAddress}:"
     Get-MigrationBatch -Identity $EmailAddress | Where-Object { ($_.DataConsistencyScore -inotin "Good", "Perfect") -or !$_.IsValid } | Set-Variable migrationBatch
     if ($migrationBatch) {
-        Write-Warning "`nMigration batch ${EmailAddress} has data consistency score '$($migrationBatch.DataConsistencyScore.ToString())'"
+        Write-Warning "Migration batch ${EmailAddress} has data consistency score '$($migrationBatch.DataConsistencyScore.ToString())'"
         $migrationBatch | Sort-Properties | Write-Verbose
         $migrationBatch | Format-List -Property BatchDirection,Identity,IsValid,Status,State,DataConsistencyScore,StartDateTime,TargetDeliveryDomain,WorkflowStage
 
@@ -106,7 +106,7 @@ if ($EmailAddress) {
     Write-Verbose "Migration user ${EmailAddress}:"
     Get-MigrationUser -Identity $EmailAddress | Where-Object { $_.DataConsistencyScore -inotin "Good", "Perfect" } | Set-Variable migrationUser
     if ($migrationUser) {
-        Write-Warning "`nMigration user ${EmailAddress} has data consistency score '$($migrationUser.DataConsistencyScore.ToString())'"
+        Write-Warning "Migration user ${EmailAddress} has data consistency score '$($migrationUser.DataConsistencyScore.ToString())'"
         $migrationUser | Sort-Properties
     }
 }
