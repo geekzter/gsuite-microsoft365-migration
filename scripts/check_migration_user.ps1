@@ -84,7 +84,7 @@ if ($EmailAddress) {
     $migrationUserStats.SkippedItems | Set-Variable skippedItems
     if ($skippedItems) {
         $skippedItems | Measure-Object | Select-Object -ExpandProperty Count | Set-Variable skippedItemsCount
-        Write-Warning "Found $skippedItemsCount skipp`ed items for ${EmailAddress}:"
+        Write-Warning "Found $skippedItemsCount skipped items for ${EmailAddress}:"
         $skippedItems | Format-Table Subject, Sender, DateSent, ScoringClassifications
 
         pause
