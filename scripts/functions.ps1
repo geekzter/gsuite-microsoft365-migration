@@ -118,6 +118,9 @@ function Login-ExchangeOnline () {
         if (-not (Get-OrganizationConfig -ErrorAction SilentlyContinue)) {
             $login = $true
         }
+        if (!$login -and !(Get-Command Get-MigrationUser -ErrorAction SilentlyContinue)) {
+            $login = $true
+        }
     } else {
         $login = $true
     }
